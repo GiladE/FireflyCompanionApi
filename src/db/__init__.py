@@ -3,11 +3,11 @@ from boto3.dynamodb.conditions import Key
 
 
 class BaseModel:
-    dynamodb = boto3.resource('dynamodb')
+    dynamodb = boto3.resource("dynamodb")
 
-    table_name = None # abstract
-    partition_key = None # abstract
-    sort_key = None # abstract
+    table_name = None  # abstract
+    partition_key = None  # abstract
+    sort_key = None  # abstract
 
     def __init__(self):
         if not self.table_name:
@@ -21,9 +21,11 @@ class BaseModel:
             key_condition &= Key(self.sort_key).eq(sk_value)
         try:
             response = self.table.query(KeyConditionExpression=key_condition)
-            items = response.get('Items', [])
+            items = response.get("Items", [])
             if not items:
-                print(f"Item not found: {self.partition_key}={pk_value}, {self.sort_key}={sk_value}")
+                print(
+                    f"Item not found: {self.partition_key}={pk_value}, {self.sort_key}={sk_value}"
+                )
                 return None
             return items[0] if len(items) == 1 else items
         except Exception as e:

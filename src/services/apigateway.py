@@ -12,11 +12,13 @@ apigw_client = boto3.client(
 
 def create_broadcast_message(connection_id, message):
     """Create a broadcast message in the required format."""
-    return json.dumps({
-        "time": datetime.utcnow().isoformat(),
-        "user": connection_id,
-        "message": message
-    })
+    return json.dumps(
+        {
+            "time": datetime.utcnow().isoformat(),
+            "user": connection_id,
+            "message": message,
+        }
+    )
 
 
 def broadcast_message_to_connections(connections, message):
@@ -25,20 +27,25 @@ def broadcast_message_to_connections(connections, message):
     for connection in connections:
         try:
             apigw_client.post_to_connection(
-                ConnectionId=connection["connection_id"],
-                Data=message.encode("utf-8")
+                ConnectionId=connection["connection_id"], Data=message.encode("utf-8")
             )
-            print(f"Message sent to connection: connection_id={connection['connection_id']}")
+            print(
+                f"Message sent to connection: connection_id={connection['connection_id']}"
+            )
         except apigw_client.exceptions.GoneException:
-            print(f"Stale connection detected, deleting: connection_id={connection['connection_id']}")
+            print(
+                f"Stale connection detected, deleting: connection_id={connection['connection_id']}"
+            )
             connections_table.delete_item(
                 Key={
                     "channel_id": connection["channel_id"],
-                    "connection_id": connection["connection_id"]
+                    "connection_id": connection["connection_id"],
                 }
             )
         except Exception as e:
-            print(f"Failed to send message to connection {connection['connection_id']}: {str(e)}")
+            print(
+                f"Failed to send message to connection {connection['connection_id']}: {str(e)}"
+            )
             success = False
     return success
 

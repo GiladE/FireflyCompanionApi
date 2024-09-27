@@ -1,10 +1,17 @@
-from src.db import connection
-from src.services.apigateway import broadcast_message_to_connections, create_broadcast_message, params, respond
+from src.db.connection import Connection
+from src.services.apigateway import (
+    broadcast_message_to_connections,
+    create_broadcast_message,
+    params,
+    respond,
+)
+
+connection = Connection()
 
 
 def connect(event, _context):
     connection_id = event["requestContext"]["connectionId"]
-    channel_id = params(event, 'channel_id')
+    channel_id = params(event, "channel_id")
 
     if not channel_id:
         return respond(400, "Missing 'channel_id' in query string parameters")
@@ -17,7 +24,7 @@ def connect(event, _context):
 
 def disconnect(event, _context):
     connection_id = event["requestContext"]["connectionId"]
-    
+
     if connection.delete(connection_id):
         return respond(200)
     else:

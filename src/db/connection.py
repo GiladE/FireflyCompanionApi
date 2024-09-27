@@ -4,9 +4,9 @@ from . import BaseModel
 
 
 class Connection(BaseModel):
-    table_name = os.environ.get('CONNECTIONS_TABLE')
-    partition_key = 'channel_id'
-    sort_key = 'connection_id'
+    table_name = os.environ.get("CONNECTIONS_TABLE")
+    partition_key = "channel_id"
+    sort_key = "connection_id"
 
     def create_connection(self, channel_id, connection_id):
         """Store the connection in the DynamoDB table with a TTL."""
@@ -14,8 +14,8 @@ class Connection(BaseModel):
         item = {
             self.partition_key: channel_id,
             self.sort_key: connection_id,
-            'ttl': ttl,
-            'connected_at': datetime.utcnow().isoformat()
+            "ttl": ttl,
+            "connected_at": datetime.utcnow().isoformat(),
         }
         return self.create(item)
 
