@@ -28,10 +28,10 @@ class Connection(BaseModel):
         """Retrieve the connection using the GSI on connection_id."""
         try:
             response = self.table.query(
-                IndexName='ConnectionIdIndex',
-                KeyConditionExpression=Key('connection_id').eq(connection_id)
+                IndexName="ConnectionIdIndex",
+                KeyConditionExpression=Key("connection_id").eq(connection_id),
             )
-            items = response.get('Items', [])
+            items = response.get("Items", [])
             if not items:
                 print(f"Connection not found: connection_id={connection_id}")
                 return None

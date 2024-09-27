@@ -32,21 +32,23 @@ def disconnect(event, _context):
 
 
 def message(event, _context):
-    connection_id = event["requestContext"]["connectionId"]
+    active_connection_id = event["requestContext"]["connectionId"]
     message = event.get("body")
-    connection = connection.find_by_connection_id(connection_id)
+    active_connection = connection.find_by_connection_id(active_connection_id)
 
-    if not connection:
+    if not active_connection:
         return respond(404, "Connection not found")
 
-    connections = connection.find_by_channel_id(connection["channel_id"])
+    recipient_connections = connection.find_by_channel_id(
+        active_connection["channel_id"]
+    )
 
-    if connections is None:
+    if recipient_connections is None:
         return respond(500, "Failed to retrieve connections")
 
-    broadcast_message = create_broadcast_message(connection_id, message)
+    broadcast_message = create_broadcast_message(active_connection_id, message)
 
-    if broadcast_message_to_connections(connections, broadcast_message):
+    if broadcast_message_to_connections(recipient_connections, broadcast_message):
         return respond(200)
     else:
         return respond(500, "Failed to broadcast message")
