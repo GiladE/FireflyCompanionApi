@@ -37,12 +37,7 @@ def broadcast_message_to_connections(connections, message):
             print(
                 f"Stale connection detected, deleting: connection_id={connection['connection_id']}"
             )
-            connections_table.delete_item(
-                Key={
-                    "channel_id": connection["channel_id"],
-                    "connection_id": connection["connection_id"],
-                }
-            )
+            connection.delete(connection["channel_id"], connection["connection_id"])
         except Exception as e:
             print(
                 f"Failed to send message to connection {connection['connection_id']}: {str(e)}"
