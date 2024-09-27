@@ -1,15 +1,13 @@
 # "org" ensures this Service is used with the correct Serverless Framework Access Key.
 org: sharedalink
-# "service" is the name of this project. This will also be added to your AWS resource names.
+# ------
 service: FireflyCompanionApi
 
 custom:
-  wsgi:
-    app: app.app
   dynamodb:
     connections:
       name: ${self:service}-connections
-      table: connections
+      billingMode: PAY_PER_REQUEST
       attributeDefinitions:
         - AttributeName: channel_id
           AttributeType: S
@@ -23,7 +21,22 @@ custom:
       timeToLiveSpecification:
         Enabled: true
         AttributeName: ttl
+    events:
+      name: ${self:service}-events
       billingMode: PAY_PER_REQUEST
+      attributeDefinitions:
+        - AttributeName: game_id
+          AttributeType: S
+        - AttributeName: id
+          AttributeType: S
+      keySchema:
+        - AttributeName: game_id
+          KeyType: HASH
+        - AttributeName: id
+          KeyType: RANGE
+  tableArn:
+    connections: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.connections.name}
+    events: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.events.name}
 
 provider:
   name: aws
@@ -31,6 +44,7 @@ provider:
   region: eu-west-1
   environment:
     CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
+    EVENTS_TABLE: ${self:custom.dynamodb.events.name}
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -39,7 +53,9 @@ provider:
         - "dynamodb:Query"
         - "dynamodb:Scan"
       Resource:
-        - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.connections.name}
+        - ${self:custom.tableArn.connections}
+        - ${self:custom.tableArn.connections}/index/ConnectionIdIndex
+        - ${self:custom.tableArn.events}
     - Effect: "Allow"
       Action:
         - "execute-api:ManageConnections"
@@ -47,31 +63,16 @@ provider:
         - arn:aws:execute-api:${self:provider.region}:*:*/*/@connections/*
 
 functions:
-  api:
-    handler: wsgi_handler.handler
-    events:
-      - http:
-          path: /
-          method: ANY
-      - http:
-          path: /{proxy+}
-          method: ANY
-  connectWebsocketHandler:
-    handler: websocket.connectHandler
-    environment:
-      CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
+  onConnect:
+    handler: src.app.connect
     events:
       - websocket: $connect
-  disconnectWebsocketHandler:
-    handler: websocket.disconnectHandler
-    environment:
-      CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
+  onDisconnect:
+    handler: src.app.disconnect
     events:
       - websocket: $disconnect
-  defaultWebsocketHandler:
-    handler: websocket.defaultHandler
-    environment:
-      CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
+  onMessage:
+    handler: src.app.message
     events:
       - websocket: $default
 
@@ -79,14 +80,14 @@ resources:
   Resources:
     ConnectionsDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'
-      Properties: 
+      Properties:
         TableName: ${self:custom.dynamodb.connections.name}
-        AttributeDefinitions: 
+        AttributeDefinitions:
           - AttributeName: channel_id
             AttributeType: S
           - AttributeName: connection_id
             AttributeType: S
-        KeySchema: 
+        KeySchema:
           - AttributeName: channel_id
             KeyType: HASH
           - AttributeName: connection_id
@@ -95,12 +96,36 @@ resources:
         TimeToLiveSpecification:
           Enabled: true
           AttributeName: ttl
+        GlobalSecondaryIndexes:
+          - IndexName: ConnectionIdIndex
+            KeySchema:
+              - AttributeName: connection_id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        Tags:
+          - Key: Environment
+            Value: dev
+    EventsDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties: 
+        TableName: ${self:custom.dynamodb.events.name}
+        AttributeDefinitions: 
+          - AttributeName: game_id
+            AttributeType: S
+          - AttributeName: id
+            AttributeType: S
+        KeySchema: 
+          - AttributeName: game_id
+            KeyType: HASH
+          - AttributeName: id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
         Tags:
           - Key: Environment
             Value: dev
 
 plugins:
-  - serverless-wsgi
   - serverless-python-requirements
   - serverless-dynamodb-local
   - serverless-offline
