@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from . import BaseModel
 
 
-class Connection(BaseModel):
+class DBConnection(BaseModel):
     table_name = os.environ.get("CONNECTIONS_TABLE")
     partition_key = "channel_id"
     sort_key = "connection_id"

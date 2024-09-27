@@ -1,9 +1,9 @@
 import json
 import boto3
 from datetime import datetime
-from src.db.connection import Connection
+from src.db.connection import DBConnection
 
-connection = Connection()
+Connection = DBConnection()
 
 apigw_client = boto3.client(
     "apigatewaymanagementapi",
@@ -38,7 +38,7 @@ def broadcast_message_to_connections(connections, message):
             print(
                 f"Stale connection detected, deleting: connection_id={recipient_connection['connection_id']}"
             )
-            connection.delete(
+            Connection.delete(
                 recipient_connection["channel_id"],
                 recipient_connection["connection_id"],
             )
@@ -62,4 +62,5 @@ def respond(status_code, message=None):
     response = {"statusCode": status_code}
     if message:
         response["body"] = message
+    print(f"[{status_code}] {json.dumps(response)}")
     return response

@@ -8,7 +8,7 @@ class EventType(Enum):
     CHAT_MESSAGE = "CHAT_MESSAGE"
 
 
-class Event(BaseModel):
+class DBEvent(BaseModel):
     table_name = os.environ.get("EVENTS_TABLE")
     partition_key = "game_id"
     sort_key = "id"
@@ -19,7 +19,8 @@ class Event(BaseModel):
         item = {
             self.partition_key: game_id,
             self.sort_key: event_id,
-            "payload": {"type": event_type, "data": data},
+            "payload": data,
+            "type": event_type,
             "timestamp": datetime.utcnow().isoformat(),
         }
         return self.create(item)

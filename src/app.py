@@ -1,6 +1,7 @@
 import json
-from src.db.connection import Connection
-from src.db.event import Event, EventType
+from src.db.connection import DBConnection
+from src.db.event import DBEvent, EventType
+from src.db.game import DBGame
 from src.services.apigateway import (
     broadcast_message_to_connections,
     create_broadcast_message,
@@ -8,18 +9,21 @@ from src.services.apigateway import (
     respond,
 )
 
-connection = Connection()
-event_model = Event()
+Connection = DBConnection()
+Game = DBGame()
+Event = DBEvent()
 
 
 def connect(event, _context):
     connection_id = event["requestContext"]["connectionId"]
-    channel_id = params(event, "channel_id")
+    game_code = params(event, "game_code")
 
-    if not channel_id:
-        return respond(400, "Missing 'channel_id' in query string parameters")
+    if not game_code:
+        return respond(400, "Missing 'game_code' in query string parameters")
 
-    if connection.create_connection(channel_id, connection_id):
+    game = Game.find_or_create(game_code)
+
+    if game and Connection.create_connection(game["game_id"], connection_id):
         return respond(200)
     else:
         return respond(500, "Failed to store connection")
@@ -28,7 +32,7 @@ def connect(event, _context):
 def disconnect(event, _context):
     connection_id = event["requestContext"]["connectionId"]
 
-    if connection.delete(connection_id):
+    if Connection.delete(connection_id):
         return respond(200)
     else:
         return respond(500, "Failed to remove connection")
@@ -43,12 +47,12 @@ def message(event, _context):
     except json.JSONDecodeError:
         message_data = {"message": message_body}
 
-    active_connection = connection.find_by_connection_id(active_connection_id)
+    active_connection = Connection.find_by_connection_id(active_connection_id)
 
     if not active_connection:
         return respond(404, "Connection not found")
 
-    recipient_connections = connection.find_by_channel_id(
+    recipient_connections = Connection.find_by_channel_id(
         active_connection["channel_id"]
     )
 
@@ -60,7 +64,7 @@ def message(event, _context):
         **message_data,
     }
 
-    event_created = event_model.create_event(
+    event_created = Event.create_event(
         game_id=active_connection["channel_id"],
         event_type=EventType.CHAT_MESSAGE.value,
         data=event_payload,

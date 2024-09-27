@@ -34,9 +34,19 @@ custom:
           KeyType: HASH
         - AttributeName: id
           KeyType: RANGE
+    games:
+      name: ${self:service}-games
+      billingMode: PAY_PER_REQUEST
+      attributeDefinitions:
+        - AttributeName: game_id
+          AttributeType: S
+      keySchema:
+        - AttributeName: game_id
+          KeyType: HASH
   tableArn:
     connections: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.connections.name}
     events: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.events.name}
+    games: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.games.name}
 
 provider:
   name: aws
@@ -45,6 +55,7 @@ provider:
   environment:
     CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
     EVENTS_TABLE: ${self:custom.dynamodb.events.name}
+    GAMES_TABLE: ${self:custom.dynamodb.games.name}
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -56,6 +67,7 @@ provider:
         - ${self:custom.tableArn.connections}
         - ${self:custom.tableArn.connections}/index/ConnectionIdIndex
         - ${self:custom.tableArn.events}
+        - ${self:custom.tableArn.games}
     - Effect: "Allow"
       Action:
         - "execute-api:ManageConnections"
@@ -103,9 +115,7 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
-        Tags:
-          - Key: Environment
-            Value: dev
+
     EventsDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'
       Properties: 
@@ -121,9 +131,19 @@ resources:
           - AttributeName: id
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
-        Tags:
-          - Key: Environment
-            Value: dev
+
+    GamesDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: ${self:custom.dynamodb.games.name}
+        AttributeDefinitions:
+          - AttributeName: game_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: game_id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
 
 plugins:
   - serverless-python-requirements
