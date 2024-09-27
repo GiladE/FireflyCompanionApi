@@ -4,12 +4,10 @@ org: sharedalink
 service: FireflyCompanionApi
 
 custom:
-  tableArn:
-    connections: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.connections.name}
-    events: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.events.name}
   dynamodb:
     connections:
       name: ${self:service}-connections
+      billingMode: PAY_PER_REQUEST
       attributeDefinitions:
         - AttributeName: channel_id
           AttributeType: S
@@ -23,20 +21,22 @@ custom:
       timeToLiveSpecification:
         Enabled: true
         AttributeName: ttl
+    events:
+      name: ${self:service}-events
       billingMode: PAY_PER_REQUEST
-  events:
-    name: ${self:service}-events
-    attributeDefinitions:
-      - AttributeName: game_id
-        AttributeType: S
-      - AttributeName: id
-        AttributeType: S
-    keySchema:
-      - AttributeName: game_id
-        KeyType: HASH
-      - AttributeName: id
-        KeyType: RANGE
-    billingMode: PAY_PER_REQUEST
+      attributeDefinitions:
+        - AttributeName: game_id
+          AttributeType: S
+        - AttributeName: id
+          AttributeType: S
+      keySchema:
+        - AttributeName: game_id
+          KeyType: HASH
+        - AttributeName: id
+          KeyType: RANGE
+  tableArn:
+    connections: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.connections.name}
+    events: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.events.name}
 
 provider:
   name: aws
