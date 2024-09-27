@@ -25,22 +25,26 @@ def create_broadcast_message(connection_id, message):
 def broadcast_message_to_connections(connections, message):
     """Broadcast the message to all connections in the channel."""
     success = True
-    for connection in connections:
+    for recipient_connection in connections:
         try:
             apigw_client.post_to_connection(
-                ConnectionId=connection["connection_id"], Data=message.encode("utf-8")
+                ConnectionId=recipient_connection["connection_id"], Data=message.encode("utf-8")
             )
             print(
-                f"Message sent to connection: connection_id={connection['connection_id']}"
+                f"Message sent to connection: connection_id={recipient_connection['connection_id']}"
             )
         except apigw_client.exceptions.GoneException:
             print(
-                f"Stale connection detected, deleting: connection_id={connection['connection_id']}"
+                f"Stale connection detected, deleting: connection_id={recipient_connection['connection_id']}"
             )
-            connection.delete(connection["channel_id"], connection["connection_id"])
+            connection.delete(
+                recipient_connection["channel_id"],
+                recipient_connection["connection_id"],
+            )
+            success = False
         except Exception as e:
             print(
-                f"Failed to send message to connection {connection['connection_id']}: {str(e)}"
+                f"Failed to send message to connection {recipient_connection['connection_id']}: {str(e)}"
             )
             success = False
     return success
