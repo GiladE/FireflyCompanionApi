@@ -63,15 +63,15 @@ provider:
 
 functions:
   onConnect:
-    handler: src/app.connect
+    handler: src.app.connect
     events:
       - websocket: $connect
   onDisconnect:
-    handler: src/app.disconnect
+    handler: src.app.disconnect
     events:
       - websocket: $disconnect
   onMessage:
-    handler: src/app.message
+    handler: src.app.message
     events:
       - websocket: $default
 
