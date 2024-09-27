@@ -1,15 +1,15 @@
 # "org" ensures this Service is used with the correct Serverless Framework Access Key.
 org: sharedalink
-# "service" is the name of this project. This will also be added to your AWS resource names.
+# ------
 service: FireflyCompanionApi
 
 custom:
-  wsgi:
-    app: app.app
+  tableArn:
+    connections: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.connections.name}
+    events: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.events.name}
   dynamodb:
     connections:
       name: ${self:service}-connections
-      table: connections
       attributeDefinitions:
         - AttributeName: channel_id
           AttributeType: S
@@ -24,6 +24,19 @@ custom:
         Enabled: true
         AttributeName: ttl
       billingMode: PAY_PER_REQUEST
+  events:
+    name: ${self:service}-events
+    attributeDefinitions:
+      - AttributeName: game_id
+        AttributeType: S
+      - AttributeName: id
+        AttributeType: S
+    keySchema:
+      - AttributeName: game_id
+        KeyType: HASH
+      - AttributeName: id
+        KeyType: RANGE
+    billingMode: PAY_PER_REQUEST
 
 provider:
   name: aws
@@ -31,6 +44,7 @@ provider:
   region: eu-west-1
   environment:
     CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
+    EVENTS_TABLE: ${self:custom.dynamodb.events.name}
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -39,7 +53,8 @@ provider:
         - "dynamodb:Query"
         - "dynamodb:Scan"
       Resource:
-        - arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.connections.name}
+        - ${self:custom.tableArn.connections}
+        - ${self:custom.tableArn.events}
     - Effect: "Allow"
       Action:
         - "execute-api:ManageConnections"
@@ -49,20 +64,14 @@ provider:
 functions:
   onConnect:
     handler: src/app.connect
-    environment:
-      CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
     events:
       - websocket: $connect
   onDisconnect:
     handler: src/app.disconnect
-    environment:
-      CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
     events:
       - websocket: $disconnect
   onMessage:
     handler: src/app.message
-    environment:
-      CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
     events:
       - websocket: $default
 
@@ -86,6 +95,24 @@ resources:
         TimeToLiveSpecification:
           Enabled: true
           AttributeName: ttl
+        Tags:
+          - Key: Environment
+            Value: dev
+    EventsDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties: 
+        TableName: ${self:custom.dynamodb.events.name}
+        AttributeDefinitions: 
+          - AttributeName: game_id
+            AttributeType: S
+          - AttributeName: id
+            AttributeType: S
+        KeySchema: 
+          - AttributeName: game_id
+            KeyType: HASH
+          - AttributeName: id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
         Tags:
           - Key: Environment
             Value: dev
