@@ -47,29 +47,20 @@ provider:
         - arn:aws:execute-api:${self:provider.region}:*:*/*/@connections/*
 
 functions:
-  api:
-    handler: wsgi_handler.handler
-    events:
-      - http:
-          path: /
-          method: ANY
-      - http:
-          path: /{proxy+}
-          method: ANY
-  connectWebsocketHandler:
-    handler: websocket.connectHandler
+  onConnect:
+    handler: src/app.connect
     environment:
       CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
     events:
       - websocket: $connect
-  disconnectWebsocketHandler:
-    handler: websocket.disconnectHandler
+  onDisconnect:
+    handler: src/app.disconnect
     environment:
       CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
     events:
       - websocket: $disconnect
-  defaultWebsocketHandler:
-    handler: websocket.defaultHandler
+  onMessage:
+    handler: src/app.message
     environment:
       CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
     events:
@@ -100,7 +91,6 @@ resources:
             Value: dev
 
 plugins:
-  - serverless-wsgi
   - serverless-python-requirements
   - serverless-dynamodb-local
   - serverless-offline
