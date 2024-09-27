@@ -34,7 +34,7 @@ def disconnect(event, _context):
 def message(event, _context):
     connection_id = event["requestContext"]["connectionId"]
     message = event.get("body")
-    connection = connection.find(connection_id)
+    connection = connection.find_by_connection_id(connection_id)
 
     if not connection:
         return respond(404, "Connection not found")
