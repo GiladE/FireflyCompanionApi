@@ -28,7 +28,8 @@ def broadcast_message_to_connections(connections, message):
     for recipient_connection in connections:
         try:
             apigw_client.post_to_connection(
-                ConnectionId=recipient_connection["connection_id"], Data=message.encode("utf-8")
+                ConnectionId=recipient_connection["connection_id"],
+                Data=message.encode("utf-8"),
             )
             print(
                 f"Message sent to connection: connection_id={recipient_connection['connection_id']}"

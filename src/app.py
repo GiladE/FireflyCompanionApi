@@ -1,4 +1,6 @@
+import json
 from src.db.connection import Connection
+from src.db.event import Event, EventType
 from src.services.apigateway import (
     broadcast_message_to_connections,
     create_broadcast_message,
@@ -7,6 +9,7 @@ from src.services.apigateway import (
 )
 
 connection = Connection()
+event_model = Event()
 
 
 def connect(event, _context):
@@ -33,7 +36,13 @@ def disconnect(event, _context):
 
 def message(event, _context):
     active_connection_id = event["requestContext"]["connectionId"]
-    message = event.get("body")
+    message_body = event.get("body")
+
+    try:
+        message_data = json.loads(message_body)
+    except json.JSONDecodeError:
+        message_data = {"message": message_body}
+
     active_connection = connection.find_by_connection_id(active_connection_id)
 
     if not active_connection:
@@ -46,7 +55,21 @@ def message(event, _context):
     if recipient_connections is None:
         return respond(500, "Failed to retrieve connections")
 
-    broadcast_message = create_broadcast_message(active_connection_id, message)
+    event_payload = {
+        "sender": active_connection_id,
+        **message_data,
+    }
+
+    event_created = event_model.create_event(
+        game_id=active_connection["channel_id"],
+        event_type=EventType.CHAT_MESSAGE.value,
+        data=event_payload,
+    )
+
+    if not event_created:
+        return respond(500, "Failed to store event")
+
+    broadcast_message = create_broadcast_message(active_connection_id, message_data)
 
     if broadcast_message_to_connections(recipient_connections, broadcast_message):
         return respond(200)
