@@ -1,4 +1,5 @@
 import os
+from boto3.dynamodb.conditions import Key
 from datetime import datetime, timedelta
 from . import BaseModel
 
@@ -22,3 +23,19 @@ class Connection(BaseModel):
     def find_by_channel_id(self, channel_id):
         """Retrieve all connections for the given channel_id."""
         return self.find(pk_value=channel_id)
+
+    def find_by_connection_id(self, connection_id):
+        """Retrieve the connection using the GSI on connection_id."""
+        try:
+            response = self.table.query(
+                IndexName='ConnectionIdIndex',
+                KeyConditionExpression=Key('connection_id').eq(connection_id)
+            )
+            items = response.get('Items', [])
+            if not items:
+                print(f"Connection not found: connection_id={connection_id}")
+                return None
+            return items[0]
+        except Exception as e:
+            print(f"Failed to retrieve connection: {str(e)}")
+            return None

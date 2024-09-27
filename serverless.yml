@@ -54,6 +54,7 @@ provider:
         - "dynamodb:Scan"
       Resource:
         - ${self:custom.tableArn.connections}
+        - ${self:custom.tableArn.connections}/index/ConnectionIdIndex
         - ${self:custom.tableArn.events}
     - Effect: "Allow"
       Action:
@@ -79,14 +80,14 @@ resources:
   Resources:
     ConnectionsDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'
-      Properties: 
+      Properties:
         TableName: ${self:custom.dynamodb.connections.name}
-        AttributeDefinitions: 
+        AttributeDefinitions:
           - AttributeName: channel_id
             AttributeType: S
           - AttributeName: connection_id
             AttributeType: S
-        KeySchema: 
+        KeySchema:
           - AttributeName: channel_id
             KeyType: HASH
           - AttributeName: connection_id
@@ -95,6 +96,13 @@ resources:
         TimeToLiveSpecification:
           Enabled: true
           AttributeName: ttl
+        GlobalSecondaryIndexes:
+          - IndexName: ConnectionIdIndex
+            KeySchema:
+              - AttributeName: connection_id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
         Tags:
           - Key: Environment
             Value: dev
