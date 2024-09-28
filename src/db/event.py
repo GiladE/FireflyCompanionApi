@@ -31,7 +31,7 @@ class DBEvent(BaseModel):
         item = {
             self.partition_key: game_id,
             self.sort_key: event_id,
-            "payload": data,
+            "data": data,
             "type": event_type,
             "timestamp": datetime.utcnow().isoformat(),
         }
