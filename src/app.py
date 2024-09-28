@@ -59,7 +59,7 @@ def message(event, _context):
 
     event_created = Event.create_event(
         game_id=active_connection["channel_id"],
-        event_type=event_type.value,
+        event_type=event_type,
         data={
             "sender": active_connection_id,
             **message_data,

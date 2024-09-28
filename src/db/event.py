@@ -32,7 +32,7 @@ class DBEvent(BaseModel):
             self.partition_key: game_id,
             self.sort_key: event_id,
             "data": data,
-            "type": event_type,
+            "type": event_type.name,
             "timestamp": datetime.utcnow().isoformat(),
         }
         return self.create(item)
