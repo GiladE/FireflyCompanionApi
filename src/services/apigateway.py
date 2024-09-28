@@ -1,6 +1,5 @@
 import json
 import boto3
-from datetime import datetime
 from src.db.connection import DBConnection
 
 Connection = DBConnection()
