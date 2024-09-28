@@ -11,7 +11,7 @@ class DBConnection(BaseModel):
 
     def create_connection(self, channel_id, connection_id):
         """Store the connection in the DynamoDB table with a TTL."""
-        ttl = int((datetime.utcnow() + timedelta(days=3)).timestamp())
+        ttl = int((datetime.utcnow() + timedelta(hours=10)).timestamp())
         item = {
             self.partition_key: channel_id,
             self.sort_key: connection_id,
