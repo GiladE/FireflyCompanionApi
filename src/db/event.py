@@ -7,7 +7,7 @@ from . import BaseModel
 
 class EventType(Enum):
     CHAT_MESSAGE = 0
-    STATE_CARGO = 1
+    STATE_UPDATE__CARGO = 1
     UNKNOWN = 9999
 
 
