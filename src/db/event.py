@@ -1,11 +1,23 @@
 import os
+import uuid
 from datetime import datetime
 from enum import Enum
 from . import BaseModel
 
 
 class EventType(Enum):
-    CHAT_MESSAGE = "CHAT_MESSAGE"
+    CHAT_MESSAGE = 0
+    STATE_CARGO = 1
+    UNKNOWN = 9999
+
+
+class CargoType(Enum):
+    NONE = 0
+    FUEL = 1
+    PART = 2
+    CARGO = 3
+    CONTRA = 4
+    UNKNOWN = 9999
 
 
 class DBEvent(BaseModel):
@@ -27,9 +39,6 @@ class DBEvent(BaseModel):
 
     def generate_unique_id(self):
         """Generate a unique identifier for the event."""
-        # Implement a method to generate a unique ID, e.g., UUID4
-        import uuid
-
         return str(uuid.uuid4())
 
     def find_event(self, game_id, event_id):

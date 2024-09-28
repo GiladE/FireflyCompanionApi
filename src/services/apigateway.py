@@ -11,13 +11,12 @@ apigw_client = boto3.client(
 )
 
 
-def create_broadcast_message(connection_id, message):
-    """Create a broadcast message in the required format."""
+def create_broadcast_data(connection_id, data):
+    """Create a broadcast data in the required format."""
     return json.dumps(
         {
-            "time": datetime.utcnow().isoformat(),
-            "user": connection_id,
-            "message": message,
+            "sender": connection_id,
+            **data,
         }
     )
 
