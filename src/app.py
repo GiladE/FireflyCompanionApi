@@ -16,10 +16,10 @@ Event = DBEvent()
 
 def connect(event, _context):
     connection_id = event["requestContext"]["connectionId"]
-    game_code = params(event, "channel_id")
+    game_code = params(event, "game_id")
 
     if not game_code:
-        return respond(400, "Missing 'game_code' in query string parameters")
+        return respond(400, "Missing 'game_id' in query string parameters")
 
     game = Game.find_or_create(game_code)
 
