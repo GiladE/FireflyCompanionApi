@@ -1,9 +1,15 @@
 # "org" ensures this Service is used with the correct Serverless Framework Access Key.
-org: sharedalink
+org: gilade
 # ------
 service: FireflyCompanionApi
 
 custom:
+  tableArn:
+    connections: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.connections.name}
+    events: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.events.name}
+    games: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.games.name}
+    states: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.states.name}
+    players: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.players.name}
   dynamodb:
     connections:
       name: ${self:service}-connections
@@ -43,10 +49,24 @@ custom:
       keySchema:
         - AttributeName: game_id
           KeyType: HASH
-  tableArn:
-    connections: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.connections.name}
-    events: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.events.name}
-    games: arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.dynamodb.games.name}
+    states:
+      name: ${self:service}-state
+      billingMode: PAY_PER_REQUEST
+      attributeDefinitions:
+        - AttributeName: game_id
+          AttributeType: S
+      keySchema:
+        - AttributeName: state_id
+          KeyType: HASH
+    players:
+      name: ${self:service}-players
+      billingMode: PAY_PER_REQUEST
+      attributeDefinitions:
+        - AttributeName: game_id
+          AttributeType: S
+      keySchema:
+        - AttributeName: player_id
+          KeyType: HASH
 
 provider:
   name: aws
@@ -56,6 +76,8 @@ provider:
     CONNECTIONS_TABLE: ${self:custom.dynamodb.connections.name}
     EVENTS_TABLE: ${self:custom.dynamodb.events.name}
     GAMES_TABLE: ${self:custom.dynamodb.games.name}
+    STATES_TABLE: ${self:custom.dynamodb.states.name}
+    PLAYERS_TABLE: ${self:custom.dynamodb.players.name}
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -68,6 +90,8 @@ provider:
         - ${self:custom.tableArn.connections}/index/ConnectionIdIndex
         - ${self:custom.tableArn.events}
         - ${self:custom.tableArn.games}
+        - ${self:custom.tableArn.states}
+        - ${self:custom.tableArn.players}
     - Effect: "Allow"
       Action:
         - "execute-api:ManageConnections"
@@ -144,8 +168,38 @@ resources:
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
 
+    StatesDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: ${self:custom.dynamodb.states.name}
+        AttributeDefinitions:
+          - AttributeName: game_id
+            AttributeType: S
+          - AttributeName: state_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: game_id
+            KeyType: HASH
+          - AttributeName: state_id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+
+    PlayersDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: ${self:custom.dynamodb.players.name}
+        AttributeDefinitions:
+          - AttributeName: game_id
+            AttributeType: S
+          - AttributeName: player_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: game_id
+            KeyType: HASH
+          - AttributeName: player_id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
 
 plugins:
   - serverless-python-requirements
-  - serverless-dynamodb-local
   - serverless-offline

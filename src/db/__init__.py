@@ -27,7 +27,33 @@ class BaseModel:
                     f"Item not found: {self.partition_key}={pk_value}, {self.sort_key}={sk_value}"
                 )
                 return None
-            return items[0] if len(items) == 1 else items
+            
+            if len(items) != 1:
+                print(
+                    f"Item not found. More than one item matched: {self.partition_key}={pk_value}, {self.sort_key}={sk_value}"
+                )
+                return None
+
+            return items[0]
+        except Exception as e:
+            print(f"Failed to retrieve item: {str(e)}")
+            return None
+
+    def get(self, pk_value, sk_value=None):
+        """Retrieve items by partition key and optional sort key."""
+        key_condition = Key(self.partition_key).eq(pk_value)
+        if self.sort_key and sk_value:
+            key_condition &= Key(self.sort_key).eq(sk_value)
+        try:
+            response = self.table.query(KeyConditionExpression=key_condition)
+            items = response.get("Items", [])
+            if not items:
+                print(
+                    f"Item not found: {self.partition_key}={pk_value}, {self.sort_key}={sk_value}"
+                )
+                return None
+
+            return items
         except Exception as e:
             print(f"Failed to retrieve item: {str(e)}")
             return None
@@ -53,4 +79,31 @@ class BaseModel:
             return True
         except Exception as e:
             print(f"Failed to delete item: {str(e)}")
+            return False
+
+    def update(self, pk_value, updates, sk_value=None):
+        """
+        Update an item in the DynamoDB table.
+        :param pk_value: Partition key value
+        :param updates: Dictionary of attributes to update with format {"attribute": "new_value"}
+        :param sk_value: Optional sort key value
+        :return: True if update is successful, False otherwise
+        """
+        key = {self.partition_key: pk_value}
+        if self.sort_key and sk_value:
+            key[self.sort_key] = sk_value
+
+        update_expression = "SET " + ", ".join([f"{k} = :{k}" for k in updates.keys()])
+        expression_attribute_values = {f":{k}": v for k, v in updates.items()}
+
+        try:
+            self.table.update_item(
+                Key=key,
+                UpdateExpression=update_expression,
+                ExpressionAttributeValues=expression_attribute_values,
+            )
+            print(f"Item updated: {key} with {updates}")
+            return True
+        except Exception as e:
+            print(f"Failed to update item: {str(e)}")
             return False

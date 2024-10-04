@@ -9,7 +9,7 @@ class DBConnection(BaseModel):
     partition_key = "channel_id"
     sort_key = "connection_id"
 
-    def create_connection(self, channel_id, connection_id):
+    def create_connection(self, channel_id, connection_id, **meta):
         """Store the connection in the DynamoDB table with a TTL."""
         ttl = int((datetime.utcnow() + timedelta(hours=10)).timestamp())
         item = {
@@ -17,12 +17,13 @@ class DBConnection(BaseModel):
             self.sort_key: connection_id,
             "ttl": ttl,
             "connected_at": datetime.utcnow().isoformat(),
+            **meta,
         }
         return self.create(item)
 
-    def find_by_channel_id(self, channel_id):
+    def get_by_channel_id(self, channel_id):
         """Retrieve all connections for the given channel_id."""
-        return self.find(pk_value=channel_id)
+        return self.get(pk_value=channel_id)
 
     def find_by_connection_id(self, connection_id):
         """Retrieve the connection using the GSI on connection_id."""

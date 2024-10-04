@@ -32,18 +32,18 @@ def broadcast_message_to_connections(connections, message):
             print(
                 f"Message sent to connection: connection_id={recipient_connection['connection_id']}"
             )
-        except apigw_client.exceptions.GoneException:
-            print(
-                f"Stale connection detected, deleting: connection_id={recipient_connection['connection_id']}"
-            )
-            Connection.delete(
-                recipient_connection["channel_id"],
-                recipient_connection["connection_id"],
-            )
-            success = False
+        # except apigw_client.exceptions.GoneException:
+        #     print(
+        #         f"Stale connection detected, deleting: connection_id={recipient_connection['connection_id']}"
+        #     )
+        #     Connection.delete(
+        #         recipient_connection["channel_id"],
+        #         recipient_connection["connection_id"],
+        #     )
+        #     success = False
         except Exception as e:
             print(
-                f"Failed to send message to connection {recipient_connection['connection_id']}: {str(e)}"
+                f"Failed to send message to connection {recipient_connection}: {str(e)}"
             )
             success = False
     return success
