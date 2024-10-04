@@ -118,7 +118,7 @@ def message(event, _context):
     if not event_created:
         return respond(500, "Failed to store event")
 
-    recipient_connections = Connection.find_by_channel_id(
+    recipient_connections = Connection.get_by_channel_id(
         active_connection["channel_id"]
     )
 
