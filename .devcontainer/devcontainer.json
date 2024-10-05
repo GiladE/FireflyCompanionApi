@@ -1,0 +1,42 @@
+{
+  "name": "FireflyCompanionApi (dev)",
+  "dockerComposeFile": "docker-compose.yml",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "service": "devenv",
+  "postCreateCommand": "bash -i .devcontainer/setup.sh",
+  "features": {
+    "ghcr.io/devcontainers/features/aws-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.makefile-tools",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "eamodio.gitlens",
+        "amazonwebservices.aws-toolkit-vscode",
+        "wix.vscode-import-cost",
+        "esbenp.prettier-vscode",
+        "bungcip.better-toml"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.provider": "black",
+        "python.formatting.autopep8Path": "autopep8",
+        "python.formatting.blackPath": "black",
+        "python.formatting.yapfPath": "yapf",
+        "python.linting.banditPath": "bandit",
+        "python.linting.flake8Path": "flake8",
+        "python.linting.mypyPath": "mypy",
+        "python.linting.pycodestylePath": "pycodestyle",
+        "python.linting.pydocstylePath": "pydocstyle",
+        "python.linting.pylintPath": "pylint",
+        "editor.formatOnSave": true,
+        "terminal.integrated.scrollback": 10000
+      }
+    }
+  }
+}
