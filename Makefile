@@ -7,7 +7,7 @@ IPYTHON=${VENV_NAME}/bin/ipython
 
 SHELL := /bin/bash
 
-.SILENT: $(VENV_NAME)/bin/activate help prepare-venv shell serve status init fetchenv aws-login git-checkout-and-pull-master git-update-submodules
+.SILENT: $(VENV_NAME)/bin/activate help prepare-venv shell serve
 
 
 help: ## This help
