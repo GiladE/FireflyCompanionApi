@@ -65,6 +65,7 @@ def connect(event, _context):
             "warrants": None,
             "money": None,
             "cargo": None,
+            "shipSlotStates": None,
             "playerSupply": None,
             "inactiveJobs": None,
             "activeJobs": None,
@@ -125,7 +126,8 @@ def message(event, _context):
     if recipient_connections is None:
         return respond(500, "Failed to retrieve connections")
 
-    broadcast_message = create_broadcast_data(active_connection_id, message_data)
+    broadcast_message = create_broadcast_data(
+        active_connection_id, message_data)
 
     if broadcast_message_to_connections(recipient_connections, broadcast_message):
         return respond(200)
