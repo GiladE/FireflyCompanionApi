@@ -65,7 +65,7 @@ def connect(event, _context):
             "warrants": None,
             "money": None,
             "cargo": None,
-            "shipSlotStates": None,
+            "shipSlots": None,
             "playerSupply": None,
             "inactiveJobs": None,
             "activeJobs": None,
