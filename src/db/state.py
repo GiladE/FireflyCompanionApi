@@ -1,30 +1,33 @@
-import os
-from . import BaseModel
+from pynamodb.attributes import UnicodeAttribute, JSONAttribute
+from .base import Base
 
 
-class DBState(BaseModel):
-    table_name = os.environ.get("STATE_TABLE")
-    partition_key = "game_id"
-    sort_key = "state_id"
+# PK = GAME::<game_id:str>
+# SK = State::<state_id:str>
 
-    def upsert(self, game_id, state_id, state_data):
-        """Upsert 'state' by state_id based on the provided state."""
-        found_state = self.find(state_id)
 
-        if found_state:
-            found_state["data"] = state_data
-            if self.update(
-                game_id,
-                {"data": state_data},
-                state_id,
-            ):
-                return found_state
-        else:
-            item = {
-                self.partition_key: game_id,
-                "data": state_data,
-            }
-            if self.create(item):
-                return item
+class State(Base, discriminator="state"):
+    game_id = UnicodeAttribute()
+    state_id = UnicodeAttribute()
+    data = JSONAttribute()
 
-        return None
+    @classmethod
+    def find(cls, game_id, state_id):
+        try:
+            return cls.query(
+                f"GAME::{game_id}",
+                cls.SK == f"STATE::{state_id}",
+                limit=1,
+            ).next()
+        except StopIteration as exc:
+            raise State.DoesNotExist() from exc
+
+    @classmethod
+    def upsert(cls, game_id, state_id, state_data):
+        try:
+            obj = cls.find(game_id, state_id)
+        except State.DoesNotExist():
+            obj = cls(f"GAME::{game_id}", f"STATE::{state_id}")
+
+        obj.data = state_data
+        obj.save()

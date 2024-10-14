@@ -1,42 +1,45 @@
-import os
-from boto3.dynamodb.conditions import Key
-from datetime import datetime, timedelta
-from . import BaseModel
+from datetime import timedelta
+from pynamodb.attributes import UnicodeAttribute, TTLAttribute
+from .base import Base
+
+# PK = CHANNEL::<channel_id:str>
+# SK = CONNECTION::<connection_id:str>
+
+# GSI1PK = CONNECTION::<connection_id:str>
+# GSI1SK = CONNECTION::<connection_id:str>
 
 
-class DBConnection(BaseModel):
-    table_name = os.environ.get("CONNECTIONS_TABLE")
-    partition_key = "channel_id"
-    sort_key = "connection_id"
+class Connection(Base, discriminator="connection"):
+    channel_id = UnicodeAttribute()
+    connection_id = UnicodeAttribute()
 
-    def create_connection(self, channel_id, connection_id, **meta):
-        """Store the connection in the DynamoDB table with a TTL."""
-        ttl = int((datetime.utcnow() + timedelta(hours=10)).timestamp())
-        item = {
-            self.partition_key: channel_id,
-            self.sort_key: connection_id,
-            "ttl": ttl,
-            "connected_at": datetime.utcnow().isoformat(),
-            **meta,
-        }
-        return self.create(item)
+    ttl = TTLAttribute(default=timedelta(hours=10))
 
-    def get_by_channel_id(self, channel_id):
-        """Retrieve all connections for the given channel_id."""
-        return self.get(pk_value=channel_id)
+    @classmethod
+    def get_by_channel(self, channel_id, **args):
+        return self.query(
+            f"CHANNEL::{channel_id}",
+            self.SK.startswith(f"CONNECTION::"),
+            **args,
+        )
 
-    def find_by_connection_id(self, connection_id):
-        """Retrieve the connection using the GSI on connection_id."""
+    @classmethod
+    def find(self, connection_id):
         try:
-            response = self.table.query(
-                IndexName="ConnectionIdIndex",
-                KeyConditionExpression=Key("connection_id").eq(connection_id),
-            )
-            items = response.get("Items", [])
-            if not items:
-                print(f"Connection not found: connection_id={connection_id}")
-                return None
-            return items[0]
-        except Exception as e:
-            print(f"Failed to retrieve connection: {str(e)}")
-            return None
+            return self.gsi1.query(
+                f"CONNECTION::{connection_id}",
+                self.GSI1SK == f"CONNECTION::{connection_id}",
+                limit=1,
+            ).next()
+        except StopIteration as exc:
+            raise Connection.DoesNotExist() from exc
+
+    @classmethod
+    def new(self, **args):
+        return self(
+            f"CHANNEL::{args['channel_id']}",
+            f"CONNECTION::{args['connection_id']}",
+            GSI1PK=f"CONNECTION::{args['connection_id']}",
+            GSI1SK=f"CONNECTION::{args['connection_id']}",
+            **args,
+        )

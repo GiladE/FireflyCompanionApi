@@ -1,8 +1,9 @@
-import os
 from datetime import datetime
-from enum import Enum
 from ulid import ULID
-from . import BaseModel
+from enum import Enum
+from pynamodb.attributes import UnicodeAttribute, JSONAttribute
+from pynamodb_attributes import UnicodeEnumAttribute
+from .base import Base
 
 
 class EventType(Enum):
@@ -20,27 +21,38 @@ class CargoType(Enum):
     UNKNOWN = 9999
 
 
-class DBEvent(BaseModel):
-    table_name = os.environ.get("EVENTS_TABLE")
-    partition_key = "game_id"
-    sort_key = "id"
+# PK = GAME::<game_id:str>
+# SK = EVENT::<event_id:str>
 
-    def create_event(self, game_id, event_type, data):
-        """Store the event in the DynamoDB table."""
-        event_id = f"{datetime.utcnow().isoformat()}#{self.generate_unique_id()}"
-        item = {
-            self.partition_key: game_id,
-            self.sort_key: event_id,
-            "data": data,
-            "type": event_type.name,
-            "timestamp": datetime.utcnow().isoformat(),
-        }
-        return self.create(item)
+# GSI1PK = CONNECTION::<connection_id:str>
+# GSI1SK = CONNECTION::<connection_id:str>
 
-    def generate_unique_id(self):
-        """Generate a unique identifier for the event."""
-        return str(ULID())
 
-    def find_event(self, game_id, event_id):
-        """Retrieve the event for the given game_id and event_id."""
-        return self.find(pk_value=game_id, sk_value=event_id)
+class Event(Base, discriminator="event"):
+    game_id = UnicodeAttribute()
+    event_id = UnicodeAttribute()
+    data = JSONAttribute()
+    event_type = UnicodeEnumAttribute(
+        EventType,
+        EventType.UNKNOWN,
+    )
+
+    @classmethod
+    def find(self, game_id, event_id):
+        try:
+            return self.query(
+                f"GAME::{game_id}",
+                self.SK == f"EVENT::{event_id}",
+                limit=1,
+            ).next()
+        except StopIteration as exc:
+            raise Event.DoesNotExist() from exc
+
+    @classmethod
+    def new(self, **args):
+        event_id = f"{datetime.utcnow().isoformat()}#{ULID()}"
+        return self(
+            f"GAME::{args['game_id']}",
+            f"EVENT::{event_id}",
+            **args,
+        )

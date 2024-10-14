@@ -1,2 +1,4 @@
 boto3
 python-ulid
+pynamodb
+pynamodb-attributes
