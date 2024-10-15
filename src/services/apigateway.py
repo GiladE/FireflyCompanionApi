@@ -1,8 +1,8 @@
 import json
 import boto3
-from src.db.connection import DBConnection
+# from src.db.connection import DBConnection
 
-Connection = DBConnection()
+# Connection = DBConnection()
 
 apigw_client = boto3.client(
     "apigatewaymanagementapi",
